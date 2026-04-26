@@ -1,6 +1,23 @@
 # DontSleep
 
-AIエージェント（Claude Code など）を実行している間だけ、Mac が蓋を閉じてもスリープしないようにするメニューバー常駐アプリのプロトタイプです。
+AIエージェント（Claude Code など）を実行している間だけ、Mac が蓋を閉じてもスリープしないようにするメニューバー常駐アプリです。
+
+🌐 **公開サイト**: https://yazikiyo5-star.github.io/dontsleep/
+📦 **最新リリース**: https://github.com/yazikiyo5-star/dontsleep/releases/latest
+
+---
+
+## インストール（推奨・コンパイル不要）
+
+[最新リリースの DMG](https://github.com/yazikiyo5-star/dontsleep/releases/latest) をダウンロードして:
+
+1. ダブルクリックで DMG をマウント
+2. `DontSleep.app` を `~/Applications`（または `/Applications`）にドラッグ
+3. アプリを起動 — メニューバーに ☕ アイコンが出れば成功
+
+DMG は **Apple Developer ID で署名 + 公証 (notarized)** 済みなので、Gatekeeper の "開発元未確認" 警告は出ません。
+
+ソースから自分でビルドしたい場合は [ビルドと起動](#ビルドと起動) を参照。
 
 ---
 
