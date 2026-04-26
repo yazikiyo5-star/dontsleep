@@ -1,0 +1,109 @@
+name: Release
+
+# Builds, signs, notarizes, and uploads a DMG when a tag like v0.2.0 is pushed.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   APPLE_DEVELOPER_ID_P12_BASE64
+#       base64-encoded contents of dist/DontSleep-keychain.p12
+#       Generate: base64 -i dist/DontSleep-keychain.p12 | pbcopy
+#   APPLE_DEVELOPER_ID_P12_PASSWORD
+#       Password used when the .p12 was created (e.g. "dontsleep" — change for prod)
+#   APPLE_ID
+#       Apple ID used for notarization (haruqvp@icloud.com)
+#   APPLE_TEAM_ID
+#       Developer Team ID (ZW29TWZK6Q)
+#   APPLE_APP_SPECIFIC_PASSWORD
+#       App-Specific Password from account.apple.com
+#       (xxxx-xxxx-xxxx-xxxx format)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to build (e.g. v0.2.0)'
+        required: true
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          # strip leading 'v'
+          NUM="${VERSION#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "num=${NUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Import Developer ID certificate into temporary keychain
+        env:
+          P12_B64:  ${{ secrets.APPLE_DEVELOPER_ID_P12_BASE64 }}
+          P12_PASS: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          set -e
+          KEY_CHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEY_PWD=$(uuidgen)
+
+          security create-keychain -p "$KEY_PWD" "$KEY_CHAIN"
+          security set-keychain-settings -lut 21600 "$KEY_CHAIN"
+          security unlock-keychain -p "$KEY_PWD" "$KEY_CHAIN"
+          security default-keychain -s "$KEY_CHAIN"
+          # keep login keychain searchable for system trust roots
+          security list-keychains -d user -s "$KEY_CHAIN" login.keychain-db
+
+          P12_PATH="$RUNNER_TEMP/cert.p12"
+          echo "$P12_B64" | base64 --decode > "$P12_PATH"
+
+          security import "$P12_PATH" \
+            -k "$KEY_CHAIN" \
+            -P "$P12_PASS" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security \
+            -A
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEY_PWD" "$KEY_CHAIN"
+
+          security find-identity -v -p codesigning "$KEY_CHAIN"
+
+          echo "KEY_CHAIN=$KEY_CHAIN"   >> "$GITHUB_ENV"
+          echo "KEY_PWD=$KEY_PWD"       >> "$GITHUB_ENV"
+
+      - name: Store notarytool credentials
+        env:
+          APPLE_ID:                    ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID:               ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "DontSleep" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --keychain "$KEY_CHAIN"
+
+      - name: Build, sign, notarize, staple
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.num }}
+        run: |
+          export NOTARY_PROFILE="DontSleep"
+          ./scripts/release.sh
+
+      - name: Upload DMG to release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/DontSleep-${{ steps.ver.outputs.num }}.dmg
+          generate_release_notes: true
+          fail_on_unmatched_files: true
