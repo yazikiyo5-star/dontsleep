@@ -1,0 +1,35 @@
+[
+  {
+    "id": "2026-04-sponsor-a",
+    "attribution": "Sponsored",
+    "headline": "Your Mac dev toolkit, in one place",
+    "body": "Ship faster with our all-in-one bundle →",
+    "imageUrl": "https://example.com/assets/partner-logo.png",
+    "fallbackSymbol": "hammer.fill",
+    "clickUrl": "https://example.com/partner?utm_source=dontsleep&utm_medium=banner&utm_campaign=2026-04",
+    "impressionUrl": "https://example.com/pixel.gif?c=2026-04-sponsor-a",
+    "weight": 1.0
+  },
+  {
+    "id": "2026-04-selfpromo-a",
+    "attribution": "About",
+    "headline": "DontSleep keeps Claude Code awake",
+    "body": "★ us on GitHub to support development",
+    "imageUrl": null,
+    "fallbackSymbol": "cup.and.saucer.fill",
+    "clickUrl": "https://github.com/your-user/DontSleep",
+    "impressionUrl": null,
+    "weight": 1.0
+  },
+  {
+    "id": "2026-04-donate-a",
+    "attribution": "Support",
+    "headline": "Support the developer",
+    "body": "GitHub Sponsors / Buy Me a Coffee",
+    "imageUrl": null,
+    "fallbackSymbol": "heart.fill",
+    "clickUrl": "https://github.com/sponsors/your-user",
+    "impressionUrl": null,
+    "weight": 1.0
+  }
+]

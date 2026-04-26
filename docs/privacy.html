@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DontSleep — Privacy Policy</title>
+<style>
+  :root {
+    --fg: #1a1a1a; --muted: #6b6b70; --bg: #ffffff; --card: #f7f7f9;
+    --accent: #5b21b6; --border: #e5e5e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #f2f2f5; --muted: #a5a5ae; --bg: #0f0f12; --card: #1a1a20;
+      --accent: #a78bfa; --border: #2a2a33;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+                 "Helvetica Neue", sans-serif;
+    color: var(--fg); background: var(--bg); line-height: 1.7;
+    font-size: 16px;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 { font-size: 20px; margin: 40px 0 12px; }
+  h3 { font-size: 16px; margin: 24px 0 8px; color: var(--muted); }
+  a { color: var(--accent); }
+  p, li { color: var(--fg); }
+  .muted { color: var(--muted); font-size: 14px; }
+  .note {
+    padding: 16px 20px; background: var(--card);
+    border-left: 3px solid var(--accent); border-radius: 4px;
+    margin: 16px 0;
+  }
+  code {
+    background: var(--card); padding: 2px 6px;
+    border-radius: 4px; font-family: "SF Mono", Menlo, monospace;
+    font-size: 0.9em;
+  }
+  nav { margin-bottom: 24px; }
+  nav a { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+
+<nav><a href="./">← Back to home</a></nav>
+
+<h1>Privacy Policy</h1>
+<p class="muted">Last updated: 2026-04-18</p>
+
+<div class="note">
+  <strong>TL;DR</strong> — DontSleep does NOT collect, transmit, or store
+  any personal information about you. It runs entirely on your own Mac.
+  The only network traffic it can make is (1) fetching a banner ad feed
+  and (2) firing an impression pixel when a banner is shown — both of
+  which you can disable in one click.
+</div>
+
+<h2>1. What DontSleep does on your Mac</h2>
+<p>DontSleep is a small menu-bar application that prevents your Mac
+  from going to sleep while specific processes (that you choose) are
+  running. To do that it:</p>
+<ul>
+  <li>Reads the output of <code>/bin/ps -Axo comm=</code> every few seconds
+      to see which processes are running. This list stays on your machine.</li>
+  <li>Spawns <code>/usr/bin/caffeinate</code> when suppression is active.</li>
+  <li>Optionally runs <code>sudo -n pmset -a disablesleep 0/1</code> if you
+      opted into the lid-closed mode. The required sudoers entry is
+      narrowly scoped to just those two commands and is written only
+      after you click "Install…" and enter your admin password.</li>
+</ul>
+
+<h2>2. What data DontSleep does NOT collect</h2>
+<ul>
+  <li>No analytics / telemetry.</li>
+  <li>No crash reports sent to us.</li>
+  <li>No user accounts, no logins, no cloud sync.</li>
+  <li>The list of processes you watch is stored locally in
+      <code>~/Library/Preferences/com.haru.dontsleep.plist</code> and
+      never leaves your computer.</li>
+</ul>
+
+<h2>3. Advertising (optional)</h2>
+<p>When <em>suppression is active</em>, DontSleep can display a small
+  sponsored banner in the bottom-right corner of your main screen.</p>
+
+<h3>Ad delivery</h3>
+<p>Two provider modes are supported:</p>
+<ul>
+  <li><strong>House Ads</strong> — fetches a static JSON file from an
+    HTTPS URL you (or the app's publisher) configured. Only metadata
+    about the creative (headline, image URL, click URL) is returned.</li>
+  <li><strong>EthicalAds</strong> — posts a request to
+    <code>server.ethicalads.io</code> to get the next creative. The
+    request includes only non-identifying fields (publisher id,
+    placement name, keywords). See
+    <a href="https://www.ethicalads.io/privacy-policy/">EthicalAds'
+      own privacy policy</a>.</li>
+</ul>
+
+<h3>Impression tracking</h3>
+<p>When a creative is shown for the first time during an app run, the
+  app issues a single HTTP GET to the creative's <code>impressionUrl</code>
+  (if one is provided). The User-Agent is hardcoded to
+  <code>DontSleep/x.y</code>. No user id, no IP header injection, no
+  cookie handling. If the creative has no <code>impressionUrl</code>,
+  nothing is sent.</p>
+
+<h3>Click tracking</h3>
+<p>Clicks open the creative's click URL in your default browser via
+  <code>NSWorkspace.open</code>. From that point onward, you are
+  interacting with the advertiser's own website under their own privacy
+  policy — DontSleep is not involved.</p>
+
+<h3>Turning ads off</h3>
+<p>Open <em>Preferences… → 広告表示</em> and toggle the switch off.
+  The banner will never appear again and no network requests for ads
+  will be made.</p>
+
+<h2>4. Permissions DontSleep asks for</h2>
+<ul>
+  <li><strong>Admin password (one time)</strong> — only if you opt into
+      <code>pmset disablesleep</code> mode. Used to install a narrowly
+      scoped sudoers rule. You can remove the rule later with
+      <code>scripts/uninstall_sudoers.sh</code>.</li>
+  <li><strong>Network access</strong> — only for ad delivery (above),
+      and only when suppression is active and ads are enabled.</li>
+</ul>
+
+<h2>5. Children</h2>
+<p>DontSleep is a developer tool; it is not directed at children under
+  13 and does not knowingly collect data from children.</p>
+
+<h2>6. Changes to this policy</h2>
+<p>If this policy changes meaningfully, the updated version will be
+  published at this URL and the "Last updated" date at the top will be
+  bumped.</p>
+
+<h2>7. Contact</h2>
+<p>Questions: open an issue on the
+  <a href="https://github.com/">GitHub repository</a>.</p>
+
+</main>
+</body>
+</html>

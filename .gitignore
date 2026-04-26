@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Swift Package Manager build artifacts
+.build/
+.swiftpm/
+Packages/
+*.xcodeproj/
+xcuserdata/
+
+# Distribution artifacts — DO NOT commit secrets or binaries
+dist/
+*.key
+*.p12
+*.pem
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.dmg
+*.zip
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs / temp
+*.log
+/tmp/
+
+# Notarization / Apple secrets
+notarization-credentials.txt
+AuthKey_*.p8

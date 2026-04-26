@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DontSleep — AI エージェント実行中だけ Mac を眠らせない</title>
+<meta name="description" content="Claude Code / aider / ollama / codex などの AI エージェントが動いている間だけ macOS のスリープを抑止する、小さなメニューバーアプリ。">
+<meta property="og:title" content="DontSleep">
+<meta property="og:description" content="AI エージェントが動いている間だけ Mac をスリープさせない、軽量なメニューバーアプリ。">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='56'%3E☕%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #6b6b70;
+    --bg: #ffffff;
+    --card: #f7f7f9;
+    --accent: #5b21b6;
+    --border: #e5e5e9;
+    --code-bg: #0f172a;
+    --code-fg: #e2e8f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #f2f2f5;
+      --muted: #a5a5ae;
+      --bg: #0f0f12;
+      --card: #1a1a20;
+      --accent: #a78bfa;
+      --border: #2a2a33;
+      --code-bg: #1e293b;
+      --code-fg: #f1f5f9;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+                 "Helvetica Neue", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 24px 40px;
+    text-align: center;
+  }
+  .emoji { font-size: 64px; }
+  h1 {
+    font-size: 48px;
+    margin: 8px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .tagline {
+    font-size: 20px;
+    color: var(--muted);
+    margin: 0 0 24px;
+  }
+  .cta {
+    display: inline-block;
+    padding: 12px 28px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    margin: 8px;
+  }
+  .cta.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  section { margin: 64px 0; }
+  h2 {
+    font-size: 28px;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+  }
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  @media (max-width: 600px) {
+    .features { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+  .feature {
+    padding: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .feature h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+  .feature p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  code.inline {
+    background: var(--card);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+  }
+  .screenshot {
+    display: block;
+    max-width: 100%;
+    margin: 32px auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer a { margin: 0 12px; }
+  .note {
+    padding: 12px 16px;
+    background: var(--card);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* --- Mock banner (stands in for a real screenshot) --- */
+  .mock-wrap {
+    margin: 32px auto;
+    padding: 24px;
+    background: linear-gradient(135deg, #e9d5ff 0%, #c7d2fe 100%);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    min-height: 220px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .mock-wrap {
+      background: linear-gradient(135deg, #3b1d6e 0%, #1e3a8a 100%);
+    }
+  }
+  .mock-menubar {
+    background: rgba(255,255,255,0.85);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: inline-flex;
+    gap: 14px;
+    align-items: center;
+    color: #1a1a1a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .mock-menubar .active { font-weight: 600; }
+  .mock-banner {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 320px;
+    background: rgba(255,255,255,0.98);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+    display: flex;
+    gap: 12px;
+    color: #1a1a1a;
+  }
+  .mock-banner .icon {
+    width: 48px; height: 48px;
+    background: #ede9fe; color: #5b21b6;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .mock-banner .text { flex: 1; min-width: 0; }
+  .mock-banner .hd {
+    font-size: 13px; font-weight: 600; margin: 0 0 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .mock-banner .bd {
+    font-size: 11px; color: #6b6b70; margin: 0;
+    line-height: 1.4;
+  }
+  .mock-banner .tag {
+    position: absolute; top: 4px; right: 8px;
+    font-size: 9px; color: #a5a5ae; text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .mock-banner .close {
+    position: absolute; top: 4px; left: 6px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #e5e5e9; color: #6b6b70;
+    font-size: 10px; line-height: 14px; text-align: center;
+    cursor: pointer;
+  }
+  .mock-caption {
+    text-align: center; font-size: 13px; color: var(--muted);
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emoji">☕️💤</div>
+  <h1>DontSleep</h1>
+  <p class="tagline">AI エージェントが動いている間だけ、Mac を眠らせない。</p>
+  <p>
+    <a class="cta" href="https://github.com/">Download (.dmg)</a>
+    <a class="cta secondary" href="https://github.com/">View on GitHub</a>
+  </p>
+</header>
+
+<main>
+
+<div class="mock-wrap" aria-label="DontSleep のメニューバーと画面右下のスポンサーバナーのイメージ">
+  <div class="mock-menubar">
+    <span class="active">☕ DontSleep</span>
+    <span>🔋 100%</span>
+    <span>🔍</span>
+    <span>🎛</span>
+    <span>14:32</span>
+  </div>
+  <div class="mock-banner">
+    <span class="close">×</span>
+    <span class="tag">Sponsored</span>
+    <div class="icon">☕</div>
+    <div class="text">
+      <p class="hd">Support DontSleep on GitHub Sponsors</p>
+      <p class="bd">開発の継続を少額から応援できます。広告を消したい場合は設定からOFFに。</p>
+    </div>
+  </div>
+</div>
+<p class="mock-caption">↑ 画面右下に小さく浮かぶスポンサーバナー（サイズ実寸）</p>
+
+<section>
+  <h2>どう動くのか</h2>
+  <p>
+    DontSleep はメニューバーに常駐する小さな macOS アプリ。
+    <code class="inline">claude</code> / <code class="inline">aider</code> /
+    <code class="inline">ollama</code> / <code class="inline">codex</code>
+    といった AI エージェントが実行されている間だけ、Mac をスリープさせない。
+    処理が終われば自動的に普段通りの省電力モードに戻る。
+  </p>
+  <p>
+    ノート PC の蓋を閉じても眠らせないモード（<code class="inline">pmset disablesleep</code>）も
+    選べる。初回だけ管理者パスワードを求められるが、以降はワンクリックで切り替え可能。
+  </p>
+</section>
+
+<section>
+  <h2>なぜ必要？</h2>
+  <p class="note">
+    Claude Code や aider に長いリファクタリングを頼んで席を立ったら、
+    戻ってきたら Mac がスリープしていて処理が止まっていた——という経験はありませんか？
+    DontSleep はそれを静かに防ぐ、ただそれだけのツール。
+  </p>
+</section>
+
+<section>
+  <h2>機能</h2>
+  <div class="features">
+    <div class="feature">
+      <h3>🎯 プロセス監視</h3>
+      <p>
+        指定したプロセスが走っている間だけスリープ抑止。プロセス名は設定画面で自由に
+        追加・削除できる。
+      </p>
+    </div>
+    <div class="feature">
+      <h3>💻 蓋閉じスリープ対応</h3>
+      <p>
+        <code class="inline">caffeinate</code> と <code class="inline">pmset disablesleep</code>
+        の2モードをワンクリックで切替。後者は蓋を閉じても眠らない。
+      </p>
+    </div>
+    <div class="feature">
+      <h3>🔒 プライバシー重視</h3>
+      <p>
+        ユーザーの操作・ファイル・通信を収集しない。広告は本人が許可した場合のみ。
+        <a href="./privacy.html">Privacy Policy</a>
+      </p>
+    </div>
+    <div class="feature">
+      <h3>⚙️ 手動オーバーライド</h3>
+      <p>
+        プロセスに関係なく常時ONもワンクリック。会議中・動画視聴中のスリープ防止にも。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>インストール</h2>
+  <ol>
+    <li>GitHub Releases から最新の <code class="inline">DontSleep-x.y.z.dmg</code> をダウンロード</li>
+    <li>マウントして <code class="inline">DontSleep.app</code> を <code class="inline">/Applications</code> にドラッグ</li>
+    <li>初回起動時は右クリック → 「開く」 で Gatekeeper を通す</li>
+  </ol>
+  <p>
+    ビルド済みバイナリは Developer ID で署名・公証されているので、2回目以降は普通にダブルクリックで開く。
+  </p>
+</section>
+
+<section>
+  <h2>ソースから自分でビルド</h2>
+  <pre>git clone https://github.com/your-user/DontSleep.git
+cd DontSleep
+./scripts/build_app.sh --install</pre>
+  <p style="color: var(--muted); font-size: 14px;">
+    必要なもの: macOS 13+, Xcode Command Line Tools (Swift 5.9+)
+  </p>
+</section>
+
+<section>
+  <h2>広告について</h2>
+  <p>
+    DontSleep は無料で、控えめなバナーで運営費をまかないます。バナーは
+    <strong>スリープ抑止が有効な間だけ</strong> 画面右下の小さな浮遊ウィンドウに表示されます。
+  </p>
+  <ul>
+    <li>閉じたければ × ですぐに消せる（その抑止サイクル中は再表示されない）</li>
+    <li>個別の広告を追跡したり、プロファイルを作ったりしません</li>
+    <li>嫌なら設定画面でトグルひとつで完全に無効化できます</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <a href="./privacy.html">Privacy Policy</a>
+  ·
+  <a href="https://github.com/">GitHub</a>
+  ·
+  <a href="https://github.com/sponsors">Support</a>
+  <br><br>
+  © 2026 DontSleep contributors.
+</footer>
+
+</body>
+</html>
